@@ -40,11 +40,11 @@ También hay una copia de esos archivos de ejemplo en este mismo repositorio. Se
 
 ## Instalación
 
-1. Crea una **copia** de la carpeta de ejemplo en tu Google Drive.
-2. Renombra la carpeta de `claseEjemplo` como quieras y rellena los google sheets que contiene con tus datos (ver README.md de ejemplo para saber formato).
+1. Crea una **copia** de la carpeta de ejemplo en tu Google Drive. Para copiar el proyecto de Apps Script (llamado `creador clase`) es recomendable darle a botón derecho y a copiar. Se creará una copia del proyecto en la raíz de tu Drive, la cual podrás mover a tu carpeta personal de calificaciones. La carpeta con la clase de ejemplo se puede descargar y subir directamente a tu carpeta personal de calificaciones.
+2. Renombra la carpeta de `claseEjemplo` como quieras y rellena los google sheets que contiene con tus datos (ver README.md de ejemplo para saber formato). Es importante que las hojas de cálculo iniciales estén en formato google sheets. Si se intenta usar con otros formatos fallará el builder.
 3. Abre el proyecto de Apps Script `creador clase`.
 4. Una vez dentro del proyecto de Apps Script, abre el archivo `buildProject.gs`, cambia la variable const `CLASS_FOLDER_NAME = "claseEjemplo"` por el nombre que tenga tu carpeta de clase y pulsa `Ejecutar`.
-5. Espera a que la ejecución termine (unos 2 minutos) y vuelve al Drive. Se habrá creado una nueva hoja de calificaciones lista para usar.
+5. Espera a que la ejecución termine (puede tardar hasta 5 minutos, si no es capaz de terminar antes de que acabe el tiempo máximo de ejecución se puede intentar por lotes) y vuelve al Drive. Se habrá creado una nueva hoja de calificaciones lista para usar.
 
 ---
 
