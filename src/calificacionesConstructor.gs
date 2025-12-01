@@ -140,6 +140,40 @@ function buildCalificaciones(n, alumnos, instrumentos, claveToColor) {
   const tempValues = temp.getDataRange().getValues();
   const tempNumRows = temp.getLastRow();
   const tempNumCols = temp.getLastColumn();
+  // ---------- DEDUPLICAR FILAS DE ALUMNOS EN TEMPORAL ----------
+  // Comparamos toda la fila (todas las columnas) para eliminar duplicados exactos
+  if (tempNumRows > 2) {
+    const seenRowSigs = new Set();
+    const uniqueDataRows = [];
+    let duplicatesCount = 0;
+
+    // tempValues[0] y tempValues[1] son las dos filas de cabecera; copiarlas
+    const newTempValues = [ tempValues[0], tempValues[1] ];
+
+    for (let r = 2; r < tempValues.length; r++) {
+      const row = tempValues[r];
+      // crear firma de fila con trim para evitar diferencias por espacios
+      const sig = row.map(c => (c === null || c === undefined) ? "" : c.toString().trim()).join("|");
+      if (!seenRowSigs.has(sig)) {
+        seenRowSigs.add(sig);
+        uniqueDataRows.push(row);
+        newTempValues.push(row);
+      } else {
+        duplicatesCount++;
+      }
+    }
+
+    if (duplicatesCount > 0) {
+      Logger.log(`buildCalificaciones: eliminados ${duplicatesCount} duplicados exactos en TEMP_CALIF`);
+    }
+
+    // Reemplazar tempValues y actualizar conteos
+    // Nota: no modificamos la hoja TEMP_CALIF; trabajamos con newTempValues y actualizamos variables
+    tempValues.length = 0;
+    Array.prototype.push.apply(tempValues, newTempValues);
+    // actualizar contadores locales
+    // tempNumRows y tempNumCols se obtendrán más abajo desde temp o desde tempValues
+  }
 
   sheetCalif.clear({ contentsOnly: false, formatOnly: false });
   if (sheetCalif.getMaxColumns() < tempNumCols)

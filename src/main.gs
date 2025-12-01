@@ -28,14 +28,58 @@ function generateTrimester(n) {
   const trimestreCol = colTrimestreIdx + 1;
   const criteriosCol = colCriteriosIdx + 1;
 
-  // ---------- build student list ordered by first surname ----------
+  // ---------- build student list ordered by surname (apellidos) ----------
+  // Se lee hasta 3 columnas por si el listado tiene Nombre, Apellido1, Apellido2.
   const listadoLastRow = Math.max( sheetList.getLastRow(), 2 );
   const datosListado = sheetList.getRange(2,1, Math.max(0, listadoLastRow-1), 3).getValues();
   const alumnosRaw = datosListado
     .filter(r => r[0] && r[1])
-    .map(r => ({ fullName: (r[0] + " " + r[1]).trim(), firstSurname: r[1].toString().trim() }));
-  alumnosRaw.sort((a,b) => a.firstSurname.localeCompare(b.firstSurname, undefined, {sensitivity:'base'}));
-  const alumnos = alumnosRaw.map(a=>[a.fullName]); // for setValues
+    .map(r => {
+      const nombres = (r[0] || "").toString().trim();
+      const apellido1 = (r[1] || "").toString().trim();
+      const apellido2 = (r[2] || "").toString().trim();
+      // displayName: solo nombre + primer apellido (para mostrar y para emparejar con datos antiguos)
+      const displayName = (nombres + " " + apellido1).trim();
+      // surnameKey: usado solo para ordenar (apellido1 + apellido2 si existe)
+      const surnameKey = (apellido1 + (apellido2 ? " " + apellido2 : "")).trim();
+      // sourceRow: guardamos la fila original (columnas A..C leídas) para comparar igualdad completa
+      const sourceRow = [ (r[0] || "").toString().trim(), (r[1] || "").toString().trim(), (r[2] || "").toString().trim() ];
+      return { displayName, surnameKey, nombres, sourceRow };
+    });
+
+  // Ordenar por apellidos (clave), usando locale 'es' y desempatar por nombre para estabilidad
+  alumnosRaw.sort((a, b) => {
+    const cmp = a.surnameKey.localeCompare(b.surnameKey, 'es', { sensitivity: 'base', numeric: true });
+    if (cmp !== 0) return cmp;
+    return a.nombres.localeCompare(b.nombres, 'es', { sensitivity: 'base', numeric: true });
+  });
+
+  // Eliminar duplicados por displayName SOLO si toda la fila original (A..C) es idéntica.
+  // Si hay dos entradas con mismo displayName pero datos distintos, conservamos ambas y lo dejamos al usuario.
+  const seenMap = {}; // displayName -> [sourceRowString, ...]
+  const uniqueAlumnosRaw = [];
+  alumnosRaw.forEach(a => {
+    const nameKey = a.displayName || "";
+    const rowSig = (a.sourceRow || []).join("|");
+    if (!seenMap[nameKey]) {
+      seenMap[nameKey] = [rowSig];
+      uniqueAlumnosRaw.push(a);
+    } else {
+      // ya existe al menos una fila con ese displayName: comprobar si alguna coincide exactamente
+      const matches = seenMap[nameKey].some(sig => sig === rowSig);
+      if (!matches) {
+        // distinto contenido: conservarlo (posible homónimo)
+        seenMap[nameKey].push(rowSig);
+        uniqueAlumnosRaw.push(a);
+        Logger.log(`Homónimo detectado para '${nameKey}' con distinto contenido; se conservan ambas filas.`);
+      } else {
+        // fila idéntica ya existente: ignoramos esta entrada (duplicado exacto)
+        Logger.log(`Duplicado exacto detectado para '${nameKey}' — una de las filas idénticas será ignorada.`);
+      }
+    }
+  });
+
+  const alumnos = uniqueAlumnosRaw.map(a => [a.displayName]); // para setValues (solo nombre + primer apellido)
 
   // ---------- get instruments and their criteria (SORTED LEXICOGRAPHICALLY) ----------
   const instLastRow = Math.max( sheetInstruments.getLastRow(), 2 );
